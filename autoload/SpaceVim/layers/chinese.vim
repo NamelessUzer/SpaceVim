@@ -73,15 +73,14 @@ vnoremap <silent> <Plug>ConvertChineseNumberToDigit  :call <sid>ConvertChineseNu
 " 函数定义
 function! s:ConvertChineseNumberToDigit(mode) range
   let save_cursor = getcurpos()
+  let save_register = @k
   if a:mode == 'normal'
     " 正常模式处理
     let cword = expand('<cword>')
     let rst = substitute(cword, Zh2Num#getZhNumPattern(), '\=Zh2Num#Translator(submatch(0))', "g")
     if rst != cword
-      let save_register = @k
       let @k = rst
       normal! viw"kp
-      let @k = save_register
     endif
   else
     " 可视模式处理
@@ -103,16 +102,17 @@ function! s:ConvertChineseNumberToDigit(mode) range
       endfor
     else
       " 其他可视模式
-      normal! "ty
-      let selectedText = iconv(@t, &encoding, 'UTF-8')
+      normal! "ky
+      let selectedText = iconv(@k, &encoding, 'UTF-8')
       let translatedText = substitute(selectedText, Zh2Num#getZhNumPattern(), '\=Zh2Num#Translator(submatch(0))', 'g')
       if translatedText != selectedText
-        call setreg('"', translatedText)
-        normal! gv"0p
+        call setreg('k', translatedText)
+        normal! gv"kp
       endif
     endif
   endif
   call setpos('.', save_cursor)
+  let @k = save_register
 endfunction
 
 nnoremap <silent> <Plug>ConvertDigitToChineseNumberLower  :call <sid>ConvertDigitToChineseNumber('normal', "lower")<cr>
@@ -123,15 +123,14 @@ vnoremap <silent> <Plug>ConvertDigitToChineseNumberUpper  :call <sid>ConvertDigi
 
 function! s:ConvertDigitToChineseNumber(mode, caseType) abort
   let save_cursor = getcurpos()
+  let save_register = @k
   let cword = expand('<cword>')
   if a:mode == 'normal'
     if !empty(cword)
       let rst = substitute(cword, Num2Zh#getNumberPattern(), '\=Num2Zh#Translator(submatch(0), "'. a:caseType .'")', "g")
       if rst != cword
-          let save_register = @k
           let @k = rst
           normal! viw"kp
-          let @k = save_register
       endif
     endif
     " 如果是block模式，则特别处理
@@ -165,20 +164,21 @@ function! s:ConvertDigitToChineseNumber(mode, caseType) abort
         endif
 
         " 获取选择的文本，将其保存在寄存器t中
-        normal! "ty
-        let selectedText = iconv(@t, &encoding, 'UTF-8')
+        normal! "ky
+        let selectedText = iconv(@k, &encoding, 'UTF-8')
 
         " 转换文本
         let translatedText = substitute(selectedText, Num2Zh#getNumberPattern(), '\=Num2Zh#Translator(submatch(0), "' . a:caseType . '")', 'g')
 
         if translatedText != selectedText
           " 替换原文本
-          call setreg('"', translatedText)
-          normal! gv"0p
+          call setreg('k', translatedText)
+          normal! gv"kp
         endif
     endif
   endif
   call setpos('.', save_cursor)
+  let @k = save_register
 endfunction
 
 " function() wrapper
